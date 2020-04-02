@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Bluetooth_BluetoothAdapter</string>
+    <string name="botonPrenderBluetooth">Prender</string>
+    <string name="botoApagarBluetooth">Apagar</string>
+    <string name="botonBuscarBluetooth">Buscar</string>
+    <string name="botonActualizarListaDispocitivosBluetooth">Actualizar</string>
+</resources>
