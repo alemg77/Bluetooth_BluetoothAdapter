@@ -76,7 +76,7 @@ TODO: HACER QUE FUNCIONE ESTO:
             Mensajito("Esto no funciona por ahora....");
             /*
             TODO: Arreglar esto:
-            bluetoothAdapter.startLeScan(leScanCallback);
+            // bluetoothAdapter.startLeScan(leScanCallback);
             IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
             registerReceiver(miReceptor, filter);
              */
@@ -89,6 +89,9 @@ TODO: HACER QUE FUNCIONE ESTO:
         if (bluetoothAdapter.isEnabled()) {
             Toast.makeText(MainActivity.this, "Apagando Bluetooth", Toast.LENGTH_SHORT).show();
             bluetoothAdapter.disable();
+            arrayListListView = new ArrayList<>();
+            ArrayAdapter<String> adaptador = new ArrayAdapter<String>(this, R.layout.formato_list_view, arrayListListView);
+            listView_dispocitivos.setAdapter(adaptador);
         } else {
             Toast.makeText(MainActivity.this, "El Bluetooth ya estaba apagado", Toast.LENGTH_SHORT).show();
         }
@@ -125,7 +128,8 @@ TODO: HACER QUE FUNCIONE ESTO:
         switch (requestCode) {
             case REQUEST_ENABLE_BT:
                 if (resultCode == RESULT_OK) {
-                    Toast.makeText(MainActivity.this, "Bluetooth encendido!!!", Toast.LENGTH_SHORT).show();
+                    // Se activo el Bluetooth!!, hay que mostrar la lista actual de dispocitivos!!
+                    actualizarDispocitivosBluetooth();
                 } else if (resultCode == RESULT_CANCELED) {
                     Toast.makeText(MainActivity.this, "Cancelado", Toast.LENGTH_LONG).show();
                 } else {
@@ -151,7 +155,9 @@ TODO: HACER QUE FUNCIONE ESTO:
         boton4 = findViewById(R.id.button4);
         listView_dispocitivos = findViewById(R.id.idListView);
 
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        final BluetoothManager bluetoothManager =(BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+        bluetoothAdapter  = bluetoothManager.getAdapter();
+
         if (bluetoothAdapter == null) {
             Mensajito("Este dispocitivo no tiene Bluetooth");
             return;
