@@ -8,11 +8,18 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.le.BluetoothLeScanner;
+import android.bluetooth.le.ScanCallback;
+import android.bluetooth.le.ScanFilter;
+import android.bluetooth.le.ScanResult;
+import android.bluetooth.le.ScanSettings;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Parcel;
 import android.os.ParcelUuid;
 import android.view.View;
@@ -23,40 +30,45 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
-
     private static final int REQUEST_ENABLE_BT = 0;
-    private static final int REQUEST_DISCOVER_BT = 1;
     private BluetoothAdapter bluetoothAdapter;
-    private BluetoothGattCallback mBluetoothGattCallback;
+    private BluetoothLeScanner mLeScanner;
+
     private ListView listView_dispocitivos;
     private Button boton1, boton2, boton3, boton4;
     private ArrayList<String> nombres_dispocitivos;
     private ArrayList<String> arrayListListView;
     private ArrayList<String> direcciones_dispocitivos;
 
-/*
-TODO: HACER QUE FUNCIONE ESTO:
-    private LeDeviceListAdapter leDeviceListAdapter;
-    // Device scan callback.
-    private BluetoothAdapter.LeScanCallback leScanCallback = new BluetoothAdapter.LeScanCallback() {
-                @Override
-                public void onLeScan(final BluetoothDevice device, int rssi,
-                                     byte[] scanRecord) {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            leDeviceListAdapter.addDevice(device);
-                            leDeviceListAdapter.notifyDataSetChanged();
-                        }
-                    });
-                }
-            };
+    // TODO: Aun lo logre encontrar nada!!!!!!!!!!!!
+    private ScanCallback mScanCallback = new ScanCallback() {
+        @Override
+        public void onScanResult(int callbackType, ScanResult result) {
+            super.onScanResult(callbackType, result);
+            Mensajito("onScanResult!!!!!!!!!!!");
+            // mRecyclerViewAdapter.addDevice(result.getDevice().getAddress());
+        }
 
- */
+        @Override
+        public void onBatchScanResults(List<ScanResult> results) {
+            super.onBatchScanResults(results);
+            Mensajito("onBatchScanResult");
+        }
+
+        @Override
+        public void onScanFailed(int errorCode) {
+            super.onScanFailed(errorCode);
+            if ( ScanCallback.SCAN_FAILED_ALREADY_STARTED == errorCode )
+            {
+                Mensajito("Ya estaba activo el scan!!");
+            }
+        }
+    };
 
     public void Mensajito(String mensaje) {
         Toast.makeText(this, mensaje, Toast.LENGTH_SHORT).show();
@@ -74,12 +86,8 @@ TODO: HACER QUE FUNCIONE ESTO:
     private void buscarDispocitivosBluetooth() {
         if (bluetoothAdapter.isEnabled()) {
             Mensajito("Esto no funciona por ahora....");
-            /*
-            TODO: Arreglar esto:
-            // bluetoothAdapter.startLeScan(leScanCallback);
-            IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-            registerReceiver(miReceptor, filter);
-             */
+            mLeScanner.startScan(mScanCallback);
+            // mLeScanner.startScan(new ArrayList<ScanFilter>(), new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build(), mScanCallback);
         } else {
             Mensajito("El Bluetooth esta apagado");
         }
@@ -155,8 +163,9 @@ TODO: HACER QUE FUNCIONE ESTO:
         boton4 = findViewById(R.id.button4);
         listView_dispocitivos = findViewById(R.id.idListView);
 
-        final BluetoothManager bluetoothManager =(BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-        bluetoothAdapter  = bluetoothManager.getAdapter();
+        final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+        bluetoothAdapter = bluetoothManager.getAdapter();
+        mLeScanner = bluetoothAdapter.getBluetoothLeScanner();
 
         if (bluetoothAdapter == null) {
             Mensajito("Este dispocitivo no tiene Bluetooth");
@@ -173,6 +182,7 @@ TODO: HACER QUE FUNCIONE ESTO:
         listView_dispocitivos.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                mLeScanner.stopScan(mScanCallback);
                 Bundle bundle = new Bundle();
                 bundle.putString(ConeccionGattt.KEY_BUNDLE_DIRECCION_MAC, direcciones_dispocitivos.get(position));
                 Intent intent = new Intent(MainActivity.this, ConeccionGattt.class);
@@ -208,5 +218,11 @@ TODO: HACER QUE FUNCIONE ESTO:
                 actualizarDispocitivosBluetooth();
             }
         });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mLeScanner.stopScan(mScanCallback);
     }
 }
