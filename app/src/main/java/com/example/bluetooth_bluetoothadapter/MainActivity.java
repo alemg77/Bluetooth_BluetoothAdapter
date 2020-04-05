@@ -17,6 +17,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -170,6 +171,12 @@ public class MainActivity extends AppCompatActivity {
         if (bluetoothAdapter == null) {
             Mensajito("Este dispocitivo no tiene Bluetooth");
             return;
+        }
+
+        // Use this check to determine whether BLE is supported on the device. Then you can selectively disable BLE-related features.
+        if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
+            Mensajito("Este dispocitivo no sopota BLE");
+            finish();
         }
 
         if (!bluetoothAdapter.isEnabled()) {

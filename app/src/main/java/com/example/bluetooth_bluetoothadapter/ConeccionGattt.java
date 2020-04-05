@@ -12,6 +12,7 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -24,6 +25,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import java.io.IOException;
 import java.util.UUID;
 
 public class ConeccionGattt extends AppCompatActivity {
@@ -31,14 +33,11 @@ public class ConeccionGattt extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private String direccionMAC;
 
-    /*
-    private UUID uuid_1 = new UUID();
 
-            00000002-0001-1111-2222-333333333333;
-*/
+    public final static UUID UUID_A6_1 = UUID.fromString("00000002-0001-1111-2222-333333333333");
 
     private BluetoothAdapter mBluetoothAdapter;
-    private BluetoothManager mBluetoothManager;
+    private BluetoothGatt bluetoothGatt;
     private BluetoothDevice mBluetoothDevice;
 
     public final static String KEY_BUNDLE_DIRECCION_MAC = "direccion_mac";
@@ -89,77 +88,13 @@ public class ConeccionGattt extends AppCompatActivity {
         }
     };
 
-    private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
-        @Override
-        public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
-            super.onCharacteristicChanged(gatt, characteristic);
-            Mensajito("(1)");
-        }
 
-        @Override
-        public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-            super.onCharacteristicRead(gatt, characteristic, status);
-            Mensajito("(2)");
-        }
 
-        @Override
-        public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-            super.onCharacteristicWrite(gatt, characteristic, status);
-            Mensajito("(3)");
-        }
 
+    private final BroadcastReceiver gattUpdateReceiver = new BroadcastReceiver() {
         @Override
-        public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-            super.onConnectionStateChange(gatt, status, newState);
-            Mensajito("(4)");
-        }
-
-        @Override
-        public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
-            super.onDescriptorRead(gatt, descriptor, status);
-            Mensajito("(5)");
-        }
-
-        @Override
-        public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
-            super.onDescriptorWrite(gatt, descriptor, status);
-            Mensajito("(6)");
-        }
-
-        @Override
-        public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
-            super.onMtuChanged(gatt, mtu, status);
-            Mensajito("(7)");
-        }
-
-        @Override
-        public void onPhyRead(BluetoothGatt gatt, int txPhy, int rxPhy, int status) {
-            super.onPhyRead(gatt, txPhy, rxPhy, status);
-            Mensajito("(8)");
-        }
-
-        @Override
-        public void onPhyUpdate(BluetoothGatt gatt, int txPhy, int rxPhy, int status) {
-            super.onPhyUpdate(gatt, txPhy, rxPhy, status);
-            Mensajito("(9)");
-        }
-
-        @Override
-        public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
-            super.onReadRemoteRssi(gatt, rssi, status);
-            Mensajito("(10)");
-        }
-
-        @Override
-        public void onReliableWriteCompleted(BluetoothGatt gatt, int status) {
-            super.onReliableWriteCompleted(gatt, status);
-            Mensajito("(11)");
-        }
-
-        @Override
-        public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-            super.onServicesDiscovered(gatt, status);
-            Mensajito("(12)");
+        public void onReceive(Context context, Intent intent) {
+                Mensajito(" BroadcastReceiver onReceive");
         }
     };
 
@@ -181,7 +116,6 @@ public class ConeccionGattt extends AppCompatActivity {
         // Initializes Bluetooth adapter.
         final BluetoothManager bluetoothManager =(BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         mBluetoothAdapter  = bluetoothManager.getAdapter();
-
         mBluetoothAdapter.getProfileProxy(this, profileListener, 0 );
 
         boton = findViewById(R.id.idbutton);
@@ -194,25 +128,21 @@ public class ConeccionGattt extends AppCompatActivity {
             Mensajito("ERROR: El Bluetooth esta desactivado.");
         }
 
-        mBluetoothDevice = mBluetoothAdapter.getRemoteDevice(direccionMAC);
-
-        // TODO: La siguiente linea conecta, pero nunca se activa el gattCallback
-        mBluetoothDevice.connectGatt(this, false, gattCallback);
-
-        //mBluetoothDevice.createInsecureRfcommSocketToServiceRecord()
-        Mensajito(direccionMAC);
-
+        BluetoothLeService mBluetoothLeService = new BluetoothLeService(direccionMAC);
+        mBluetoothLeService.conectarGatt();
 
 
         boton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Mensajito("Nada para ti");
+                /*
                 ParcelUuid[] parcelUuids = mBluetoothDevice.getUuids();
                 if (parcelUuids == null) {
-                    Mensajito("Nada para ti");
                 } else {
                     Mensajito("Algo paso");
                 }
+                 */
             }
         });
     }
