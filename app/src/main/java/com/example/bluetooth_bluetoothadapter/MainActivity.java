@@ -24,6 +24,7 @@ import android.os.Handler;
 import android.os.Parcel;
 import android.os.ParcelUuid;
 import android.text.Html;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -38,11 +39,15 @@ import java.util.Set;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
+
+    private static final String TAG = "TAGMainActivity";
     private static final int REQUEST_ENABLE_BT = 0;
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothLeScanner mLeScanner;
+    private ScanSettings settings;
+    private List<ScanFilter> filters;
 
-
+    private Handler mHandler;
 
     private ListView listView_dispocitivos;
     private Button boton1, boton2, boton3, boton4;
@@ -52,10 +57,19 @@ public class MainActivity extends AppCompatActivity {
 
     // TODO: Aun lo logre encontrar nada!!!!!!!!!!!!
     private ScanCallback mScanCallback = new ScanCallback() {
+
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
             super.onScanResult(callbackType, result);
-            Mensajito("onScanResult!!!!!!!!!!!");
+            Mensajito("onScanResult!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            Integer rssi = result.getRssi();
+            Mensajito(" RSSI: "+rssi.toString());
+            BluetoothDevice device = result.getDevice();
+            String address = device.getAddress();
+            String name = device.getName();
+            Log.d(TAG, "onScanResult: "+name);
+            Log.d(TAG, "Address: "+address);
+            Log.d(TAG, "Rssi: "+rssi.toString());
             // mRecyclerViewAdapter.addDevice(result.getDevice().getAddress());
         }
 
@@ -70,6 +84,7 @@ public class MainActivity extends AppCompatActivity {
             super.onScanFailed(errorCode);
             if ( ScanCallback.SCAN_FAILED_ALREADY_STARTED == errorCode )
             {
+                Log.d(TAG,"El scan ya estaba activado");
                 Mensajito("Ya estaba activo el scan!!");
             }
         }
@@ -90,9 +105,11 @@ public class MainActivity extends AppCompatActivity {
 
     private void buscarDispocitivosBluetooth() {
         if (bluetoothAdapter.isEnabled()) {
-            Mensajito("Esto no funciona por ahora....");
-            mLeScanner.startScan(mScanCallback);
-            // mLeScanner.startScan(new ArrayList<ScanFilter>(), new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build(), mScanCallback);
+            //Mensajito("Esto no funciona por ahora....");
+            settings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build();
+            filters = new ArrayList<ScanFilter>();
+            Log.d(TAG, "Iniciando Bluetooth SCAN...");
+            mLeScanner.startScan(filters, settings, mScanCallback);
         } else {
             Mensajito("El Bluetooth esta apagado");
         }
@@ -171,6 +188,8 @@ public class MainActivity extends AppCompatActivity {
         final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         bluetoothAdapter = bluetoothManager.getAdapter();
         mLeScanner = bluetoothAdapter.getBluetoothLeScanner();
+
+        Log.d(TAG, "onCreate MainActivity");
 
         if (bluetoothAdapter == null) {
             Mensajito("Este dispocitivo no tiene Bluetooth");
