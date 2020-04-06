@@ -136,6 +136,8 @@ public class ConeccionGattt extends AppCompatActivity {
         } else {
             Mensajito("ERROR: El Bluetooth esta desactivado.");
         }
+
+        /// ****** AQUI ME CONECTO!!! ********************
         mBluetoothLeService = new BluetoothLeService(direccionMAC);
         mBluetoothLeService.conectarGatt();
 

@@ -55,18 +55,24 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<String> arrayListListView;
     private ArrayList<String> direcciones_dispocitivos;
 
-    // TODO: Aun lo logre encontrar nada!!!!!!!!!!!!
-    private ScanCallback mScanCallback = new ScanCallback() {
 
+    private ScanCallback mScanCallback = new ScanCallback() {
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
             super.onScanResult(callbackType, result);
-            Mensajito("onScanResult!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
             Integer rssi = result.getRssi();
             Mensajito(" RSSI: "+rssi.toString());
             BluetoothDevice device = result.getDevice();
             String address = device.getAddress();
+
+            // fixme: Falta registrar el dispocitivo encontrado
+            /*
+            BluetoothLeService mBluetoothLeService = new BluetoothLeService(address);
+            mBluetoothLeService.conectarGatt();
+            */
+
             String name = device.getName();
+            Mensajito("Encontramos:  "+name);
             Log.d(TAG, "onScanResult: "+name);
             Log.d(TAG, "Address: "+address);
             Log.d(TAG, "Rssi: "+rssi.toString());
@@ -90,6 +96,9 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    public MainActivity() {
+    }
+
     public void Mensajito(String mensaje) {
         Toast.makeText(this, mensaje, Toast.LENGTH_SHORT).show();
     }
@@ -105,11 +114,13 @@ public class MainActivity extends AppCompatActivity {
 
     private void buscarDispocitivosBluetooth() {
         if (bluetoothAdapter.isEnabled()) {
-            //Mensajito("Esto no funciona por ahora....");
+            Log.d(TAG, "Iniciando Bluetooth SCAN...");
+            /*
             settings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build();
             filters = new ArrayList<ScanFilter>();
-            Log.d(TAG, "Iniciando Bluetooth SCAN...");
             mLeScanner.startScan(filters, settings, mScanCallback);
+             */
+            mLeScanner.startScan(mScanCallback);
         } else {
             Mensajito("El Bluetooth esta apagado");
         }
@@ -212,7 +223,9 @@ public class MainActivity extends AppCompatActivity {
         listView_dispocitivos.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                mLeScanner.stopScan(mScanCallback);
+                if ( mLeScanner != null ) {
+                    mLeScanner.stopScan(mScanCallback);
+                }
                 Bundle bundle = new Bundle();
                 bundle.putString(ConeccionGattt.KEY_BUNDLE_DIRECCION_MAC, direcciones_dispocitivos.get(position));
                 Intent intent = new Intent(MainActivity.this, ConeccionGattt.class);
@@ -253,7 +266,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mLeScanner.stopScan(mScanCallback);
+        if ( mLeScanner != null) {
+            mLeScanner.stopScan(mScanCallback);
+        }
 
 
         // textView.setText(Html.fromHtml(newString));
