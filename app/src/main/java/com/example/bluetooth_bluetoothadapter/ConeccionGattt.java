@@ -10,6 +10,7 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
+import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSocket;
@@ -22,44 +23,41 @@ import android.os.Bundle;
 import android.os.ParcelUuid;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class ConeccionGattt extends AppCompatActivity {
 
-    private static final String TAG = "MainActivity";
+    public final static String KEY_BUNDLE_DIRECCION_MAC = "direccion_mac";
+    private static final String TAG = "ConeccionGatt";
     private String direccionMAC;
+    private Button botonActualizarListaSericiosGatt;
+    private ListView listViewServiciosGatt;
 
-
-    public final static UUID UUID_A6_1 = UUID.fromString("00000002-0001-1111-2222-333333333333");
+    // public final static UUID UUID_A6_1 = UUID.fromString("00000002-0001-1111-2222-333333333333");
 
     private BluetoothAdapter mBluetoothAdapter;
-    private BluetoothGatt bluetoothGatt;
-    private BluetoothDevice mBluetoothDevice;
-
-    public final static String KEY_BUNDLE_DIRECCION_MAC = "direccion_mac";
-
-    private Button boton;
+    private BluetoothLeService mBluetoothLeService;
 
 
     public void Mensajito(String mensaje) {
         Toast.makeText(this, mensaje, Toast.LENGTH_SHORT).show();
     }
 
-
     private BluetoothProfile.ServiceListener profileListener = new BluetoothProfile.ServiceListener() {
-        public void onServiceConnected(int profile, BluetoothProfile proxy) {
-            Mensajito("onServiceConnected");
-        }
+        public void onServiceConnected(int profile, BluetoothProfile proxy) { Mensajito("onServiceConnected"); }
 
-        public void onServiceDisconnected(int profile) {
-            Mensajito("onServiceDisconnected");
-        }
+        public void onServiceDisconnected(int profile) { Mensajito("onServiceDisconnected"); }
     };
-
 
     // Create a BroadcastReceiver for ACTION_FOUND
     private final BroadcastReceiver mBroadcastReceiver1 = new BroadcastReceiver() {
@@ -69,7 +67,6 @@ public class ConeccionGattt extends AppCompatActivity {
             // When discovery finds a device
             if (action.equals(mBluetoothAdapter.ACTION_STATE_CHANGED)) {
                 final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, mBluetoothAdapter.ERROR);
-
                 switch (state) {
                     case BluetoothAdapter.STATE_OFF:
                         Log.d(TAG, "onReceive: STATE OFF");
@@ -88,13 +85,10 @@ public class ConeccionGattt extends AppCompatActivity {
         }
     };
 
-
-
-
     private final BroadcastReceiver gattUpdateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-                Mensajito(" BroadcastReceiver onReceive");
+            Mensajito(" BroadcastReceiver onReceive");
         }
     };
 
@@ -104,21 +98,36 @@ public class ConeccionGattt extends AppCompatActivity {
         unregisterReceiver(mBroadcastReceiver1);
     }
 
+    private void ActualizarListaServicios() {
+        List<String> listaServiciosGatt = new ArrayList<>();
+        List<BluetoothGattService> gattServices = mBluetoothLeService.getServiciosGatt();
+
+        if (gattServices == null) {
+            Mensajito("Aun no se encontraron servicios");
+            return;
+        }
+        for (BluetoothGattService gattService : gattServices) {
+            listaServiciosGatt.add(gattService.getUuid().toString());
+        }
+        ArrayAdapter<String> adaptador = new ArrayAdapter<String>(ConeccionGattt.this, R.layout.formato_list_view, listaServiciosGatt);
+        listViewServiciosGatt.setAdapter(adaptador);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_coneccion_gattt);
         Intent intent = getIntent();
-        Bundle bundle = intent.getExtras();
+        final Bundle bundle = intent.getExtras();
         direccionMAC = bundle.getString(KEY_BUNDLE_DIRECCION_MAC);
 
+        botonActualizarListaSericiosGatt = findViewById(R.id.idBotonActualizarListaGatt);
+        listViewServiciosGatt = findViewById(R.id.idListaServiciosGatt);
 
         // Initializes Bluetooth adapter.
-        final BluetoothManager bluetoothManager =(BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-        mBluetoothAdapter  = bluetoothManager.getAdapter();
-        mBluetoothAdapter.getProfileProxy(this, profileListener, 0 );
-
-        boton = findViewById(R.id.idbutton);
+        final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+        mBluetoothAdapter = bluetoothManager.getAdapter();
+        mBluetoothAdapter.getProfileProxy(this, profileListener, 0);
 
         if (mBluetoothAdapter.isEnabled()) {
             // mBluetoothAdapter.disable();
@@ -127,22 +136,31 @@ public class ConeccionGattt extends AppCompatActivity {
         } else {
             Mensajito("ERROR: El Bluetooth esta desactivado.");
         }
-
-        BluetoothLeService mBluetoothLeService = new BluetoothLeService(direccionMAC);
+        mBluetoothLeService = new BluetoothLeService(direccionMAC);
         mBluetoothLeService.conectarGatt();
 
-
-        boton.setOnClickListener(new View.OnClickListener() {
+        botonActualizarListaSericiosGatt.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Mensajito("Nada para ti");
-                /*
-                ParcelUuid[] parcelUuids = mBluetoothDevice.getUuids();
-                if (parcelUuids == null) {
-                } else {
-                    Mensajito("Algo paso");
+                ActualizarListaServicios();
+            }
+        });
+
+        listViewServiciosGatt.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                List<BluetoothGattService> gattServices = mBluetoothLeService.getServiciosGatt();
+                BluetoothGattService bluetoothGattService = gattServices.get(position);
+                List<BluetoothGattCharacteristic> gattCharacteristics = bluetoothGattService.getCharacteristics();
+                Bundle bundle = new Bundle();
+                for (BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics) {
+                    UUID uuid1 = gattCharacteristic.getUuid();
+                    Integer properties = gattCharacteristic.getProperties();
+                    bundle.putString(uuid1.toString(),properties.toString());
                 }
-                 */
+                Intent intent = new Intent(ConeccionGattt.this, CaracteristicasGatt.class);
+                intent.putExtras(bundle);
+                startActivity(intent);
             }
         });
     }

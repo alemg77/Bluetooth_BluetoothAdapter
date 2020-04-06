@@ -30,28 +30,30 @@ public class BluetoothLeService extends Service {
     }
 
     private final static String TAG = "debugBluetoothLeService";
+    private static final int STATE_DISCONNECTED = 0;
+    private static final int STATE_CONNECTING = 1;
+    private static final int STATE_CONNECTED = 2;
+
+
 
     private BluetoothManager bluetoothManager;
     private BluetoothAdapter bluetoothAdapter;
     private String bluetoothDeviceAddress;
     private BluetoothGatt bluetoothGatt;
     private int connectionState = STATE_DISCONNECTED;
-
     private String direccionMac;
+
+    private List<BluetoothGattService> serviciosGatt;
 
     public BluetoothLeService(String direccionMac) {
         this.direccionMac = direccionMac;
+        this.serviciosGatt = null;
     }
 
-    private static final int STATE_DISCONNECTED = 0;
-    private static final int STATE_CONNECTING = 1;
-    private static final int STATE_CONNECTED = 2;
+    public List<BluetoothGattService> getServiciosGatt() {
+        return serviciosGatt;
+    }
 
-    public final static String ACTION_GATT_CONNECTED = "com.example.bluetooth.le.ACTION_GATT_CONNECTED";
-    public final static String ACTION_GATT_DISCONNECTED = "com.example.bluetooth.le.ACTION_GATT_DISCONNECTED";
-    public final static String ACTION_GATT_SERVICES_DISCOVERED = "com.example.bluetooth.le.ACTION_GATT_SERVICES_DISCOVERED";
-    public final static String ACTION_DATA_AVAILABLE = "com.example.bluetooth.le.ACTION_DATA_AVAILABLE";
-    public final static String EXTRA_DATA = "com.example.bluetooth.le.EXTRA_DATA";
     public final static UUID UUID_A6_1 = UUID.fromString("00000002-0001-1111-2222-333333333333");
 
     private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
@@ -80,7 +82,7 @@ public class BluetoothLeService extends Service {
 
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 connectionState = STATE_CONNECTED;
-                Log.i(TAG, "Connected to GATT server.");
+                Log.i(TAG, "Connectado con servidor GATT");
                 Log.i(TAG, "Attempting to start service discovery:" + bluetoothGatt.discoverServices());
 
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
@@ -136,8 +138,8 @@ public class BluetoothLeService extends Service {
             super.onServicesDiscovered(gatt, status);
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 Log.d(TAG, "onServicesDiscovered GATT_SUCCESS ");
-                List<BluetoothGattService> services = gatt.getServices();
-                displayGattServices(services);
+                serviciosGatt = gatt.getServices();
+                displayGattServices(serviciosGatt);
             } else {
                 Log.d(TAG, "onServicesDiscovered received: " + status);
             }
@@ -162,16 +164,16 @@ public class BluetoothLeService extends Service {
                 Integer properties = gattCharacteristic.getProperties();
                 Log.d(TAG, "    gattCharacteristic: " + uuid1.toString());
 
-                if ((properties & BluetoothGattCharacteristic.PROPERTY_WRITE) != 0x0 ){
+                if ((properties & BluetoothGattCharacteristic.PROPERTY_WRITE) != 0x0) {
                     Log.d(TAG, "        PROPERTY_WRITE");
                 }
-                if ((properties & BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0x0 ){
+                if ((properties & BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0x0) {
                     Log.d(TAG, "        PROPERTY_NOTIFY");
                 }
-                if ((properties & BluetoothGattCharacteristic.PERMISSION_READ) != 0x0 ){
+                if ((properties & BluetoothGattCharacteristic.PERMISSION_READ) != 0x0) {
                     Log.d(TAG, "        PERMISSION_READ");
                 }
-                if ((properties & BluetoothGattCharacteristic.PROPERTY_INDICATE) != 0x0 ){
+                if ((properties & BluetoothGattCharacteristic.PROPERTY_INDICATE) != 0x0) {
                     Log.d(TAG, "        PROPERTY_INDICATE");
                 }
             }
@@ -179,16 +181,10 @@ public class BluetoothLeService extends Service {
     }
 
     public void conectarGatt() {
-
         BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         BluetoothDevice mBluetoothDevice = mBluetoothAdapter.getRemoteDevice(this.direccionMac);
         Log.d(TAG, "Iniciando GATT");
         bluetoothGatt = mBluetoothDevice.connectGatt(this, false, gattCallback);
-
-        /*
-        bluetoothGatt.connect();
-
-         */
     }
 }
 

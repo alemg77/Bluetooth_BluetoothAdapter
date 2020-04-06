@@ -23,11 +23,13 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Parcel;
 import android.os.ParcelUuid;
+import android.text.Html;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -39,6 +41,8 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_ENABLE_BT = 0;
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothLeScanner mLeScanner;
+
+
 
     private ListView listView_dispocitivos;
     private Button boton1, boton2, boton3, boton4;
@@ -231,5 +235,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         mLeScanner.stopScan(mScanCallback);
+
+
+        // textView.setText(Html.fromHtml(newString));
     }
 }
