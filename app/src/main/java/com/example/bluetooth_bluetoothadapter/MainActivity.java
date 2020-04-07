@@ -1,5 +1,6 @@
 package com.example.bluetooth_bluetoothadapter;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -34,6 +35,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -55,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<String> arrayListListView;
     private ArrayList<String> direcciones_dispocitivos;
 
+    private Set<BluetoothDevice> dispocitivosEncontrados;
 
     private ScanCallback mScanCallback = new ScanCallback() {
         @Override
@@ -64,19 +69,12 @@ public class MainActivity extends AppCompatActivity {
             Mensajito(" RSSI: "+rssi.toString());
             BluetoothDevice device = result.getDevice();
             String address = device.getAddress();
-
-            // fixme: Falta registrar el dispocitivo encontrado
-            /*
-            BluetoothLeService mBluetoothLeService = new BluetoothLeService(address);
-            mBluetoothLeService.conectarGatt();
-            */
-
+            dispocitivosEncontrados.add(device);
             String name = device.getName();
             Mensajito("Encontramos:  "+name);
             Log.d(TAG, "onScanResult: "+name);
             Log.d(TAG, "Address: "+address);
             Log.d(TAG, "Rssi: "+rssi.toString());
-            // mRecyclerViewAdapter.addDevice(result.getDevice().getAddress());
         }
 
         @Override
@@ -115,12 +113,10 @@ public class MainActivity extends AppCompatActivity {
     private void buscarDispocitivosBluetooth() {
         if (bluetoothAdapter.isEnabled()) {
             Log.d(TAG, "Iniciando Bluetooth SCAN...");
-            /*
             settings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build();
             filters = new ArrayList<ScanFilter>();
             mLeScanner.startScan(filters, settings, mScanCallback);
-             */
-            mLeScanner.startScan(mScanCallback);
+            // mLeScanner.startScan(mScanCallback);
         } else {
             Mensajito("El Bluetooth esta apagado");
         }
@@ -142,12 +138,16 @@ public class MainActivity extends AppCompatActivity {
         if (bluetoothAdapter.isEnabled()) {
             Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
             if (pairedDevices.size() > 0) {
-                // There are paired devices. Get the name and address of each paired device.
+                for (BluetoothDevice device : pairedDevices) {
+                    dispocitivosEncontrados.add(device);
+                }
+            }
+            if ( dispocitivosEncontrados.size() > 0 ) {
                 nombres_dispocitivos = new ArrayList<>();
                 direcciones_dispocitivos = new ArrayList<>();
                 arrayListListView = new ArrayList<>();
                 ArrayAdapter<String> adaptador = new ArrayAdapter<String>(this, R.layout.formato_list_view, arrayListListView);
-                for (BluetoothDevice device : pairedDevices) {
+                for (BluetoothDevice device : dispocitivosEncontrados ) {
                     String nombreDispocitivo = device.getName();
                     String direccionDispocitivo = device.getAddress().toString();
                     nombres_dispocitivos.add(device.getName());
@@ -195,6 +195,9 @@ public class MainActivity extends AppCompatActivity {
         boton3 = findViewById(R.id.button3);
         boton4 = findViewById(R.id.button4);
         listView_dispocitivos = findViewById(R.id.idListView);
+
+        dispocitivosEncontrados = new HashSet<>();
+
 
         final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         bluetoothAdapter = bluetoothManager.getAdapter();
@@ -269,8 +272,5 @@ public class MainActivity extends AppCompatActivity {
         if ( mLeScanner != null) {
             mLeScanner.stopScan(mScanCallback);
         }
-
-
-        // textView.setText(Html.fromHtml(newString));
     }
 }
